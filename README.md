@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Bookmark App
 
-## Getting Started
+A beautiful, real-time bookmark manager built with Next.js (App Router), Supabase, and Tailwind CSS.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Google OAuth Login**: Secure sign-up and login with Google.
+- **Real-time Updates**: Bookmarks automatically appear/disappear across devices without refreshing (using Supabase Realtime).
+- **Private Bookmarks**: Row Level Security (RLS) ensures users only see their own data.
+- **Responsive Design**: Glassmorphism UI that works perfectly on mobile and desktop.
+- **Optimistic UI**: Fast interactions with instant feedback.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: Next.js 15 (App Router)
+- **Backend & Auth**: Supabase (PostgreSQL, Auth, Realtime)
+- **Styling**: Tailwind CSS 4, Framer Motion (animations), Lucide React (icons)
+- **Language**: TypeScript
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup Instructions
 
-## Learn More
+1. **Clone the repository**:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   git clone <repo-url>
+   cd bookmark
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Supabase Setup**:
+   - Create a new project on [Supabase](https://supabase.com).
+   - Go to **Project Settings > API** and copy `URL` and `anon public key`.
+   - Go to **Authentication > Providers** and enable **Google**.
+     - You will need a distinct Google Cloud Project for this.
+     - Add `https://<YOUR-PROJECT>.supabase.co/auth/v1/callback` to Authorized Redirect URIs in Google Cloud Console.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Database Schema**:
+   - Go to **SQL Editor** in Supabase dashboard.
+   - Run the contents of `schema.sql` included in this repo.
+   - This sets up the `bookmarks` table, enables Realtime, and configures RLS policies.
 
-## Deploy on Vercel
+4. **Environment Variables**:
+   - Rename `.env.local.example` to `.env.local` (or create it).
+   - Add your keys:
+     ```bash
+     NEXT_PUBLIC_SUPABASE_URL=your-project-url
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+     ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. **Run Locally**:
+   ```bash
+   npm run dev
+   ```
+   Open `http://localhost:3000`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Deploy to Vercel:
+
+1. Push to GitHub.
+2. Import project in Vercel.
+3. Add Environment Variables in Vercel settings.
+4. Deploy!
+
+## Challenges & Solutions
+
+### 1. Next.js 15 Async Cookies
+
+**Problem**: Next.js 15 made `cookies()` asynchronous, breaking older Supabase SSR examples.
+**Solution**: Updated `src/lib/supabase/server.ts` to `await cookies()` before creating the client.
+
+### 2. Real-time Subscription Privacy
+
+**Problem**: Subscribing to `bookmarks` table broadcasted all events to all users by default if RLS wasn't carefully considered with Realtime filters.
+**Solution**: Applied a filter `user_id=eq.${user.id}` in the client-side subscription to ensure users only receive their own updates, reducing bandwidth and improving privacy. (Note: RLS protects the data fetch, but Realtime needs explicit filters or "Realtime RLS" configuration).
+
+### 3. Glassmorphism Performance
+
+**Problem**: Heavy use of `backdrop-blur` can be slow on mobile.
+**Solution**: Optimized with specific `backdrop-blur-md` and limited layers to ensure smooth scrolling.

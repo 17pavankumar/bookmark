@@ -1,65 +1,103 @@
-import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+import { createClient } from "../lib/supabase/server"
+import AddBookmarkForm from "@/components/AddBookmarkForm"
+import BookmarkList from "@/components/BookmarkList"
+import AuthButton from "@/components/AuthButton"
+import { Bookmark } from "@/types"
+import { Sparkles, Zap, Lock, LogIn } from "lucide-react"
+
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let initialBookmarks: Bookmark[] = []
+  if (user) {
+    const { data } = await supabase
+      .from("bookmarks")
+      .select("*")
+      .order("created_at", { ascending: false })
+    if (data) initialBookmarks = data as Bookmark[]
+  }
+
+  // If NOT logged in: Full screen Hero landing
+  if (!user) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+        
+        <div className="relative mb-8 group">
+          <div className="absolute inset-0 bg-blue-500 rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity duration-1000" />
+          <div className="relative z-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 p-4 rounded-2xl backdrop-blur-xl border border-white/10 shadow-2xl">
+            <Sparkles className="w-16 h-16 text-blue-300 drop-shadow-md" strokeWidth={1.5} />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-white mb-6 drop-shadow-2xl">
+          Smart <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400">Bookmarks</span>
+        </h1>
+        
+        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-10 leading-relaxed font-light">
+          Organize your digital life with a beautiful, real-time bookmark manager. 
+          <br className="hidden md:block"/>Private, fast, and synced across all your devices.
+        </p>
+        
+        <div className="transform hover:scale-105 transition-transform duration-300">
+           <AuthButton initialUser={null} />
+        </div>
+        
+        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl w-full px-4">
+          <div className="bg-white/5 p-6 rounded-3xl backdrop-blur-md border border-white/5 hover:border-white/10 transition-colors group">
+            <div className="bg-blue-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
+              <Zap className="w-6 h-6 text-blue-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Real-time Sync</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">Changes updates instantly across all your open tabs and devices without refreshing.</p>
+          </div>
+          <div className="bg-white/5 p-6 rounded-3xl backdrop-blur-md border border-white/5 hover:border-white/10 transition-colors group">
+            <div className="bg-purple-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-colors">
+              <Lock className="w-6 h-6 text-purple-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Private & Secure</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">Your bookmarks are encrypted and only accessible by you via Google Auth.</p>
+          </div>
+          <div className="bg-white/5 p-6 rounded-3xl backdrop-blur-md border border-white/5 hover:border-white/10 transition-colors group">
+             <div className="bg-green-500/10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-colors">
+              <LogIn className="w-6 h-6 text-green-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">One-Click Login</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">No passwords to remember. Sign up and log in securely using your Google account.</p>
+          </div>
         </div>
       </main>
-    </div>
-  );
+    )
+  }
+
+  // If Logged In: Dashboard
+  return (
+    <main className="flex min-h-screen flex-col w-full max-w-7xl mx-auto px-4 md:px-8 py-6">
+      <header className="flex justify-between items-center mb-10 py-4 border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 rounded-xl shadow-lg shadow-purple-500/20">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white hidden sm:block tracking-tight">
+            SmartBookmarks
+          </h1>
+        </div>
+        <AuthButton initialUser={user} />
+      </header>
+
+      <div className="w-full max-w-5xl mx-auto flex-1">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-white mb-3 tracking-tight">Your Collection</h2>
+          <p className="text-slate-400 font-light">Add, manage, and sync your favorite links.</p>
+        </div>
+
+        <AddBookmarkForm user={user} />
+
+        <div className="mt-12 pb-20">
+          <BookmarkList initialBookmarks={initialBookmarks} user={user} />
+        </div>
+      </div>
+    </main>
+  )
 }
