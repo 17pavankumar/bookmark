@@ -44,7 +44,7 @@ export default async function Home() {
         </p>
         
         <div className="transform hover:scale-105 transition-transform duration-300">
-           <AuthButton initialUser={null} />
+           <AuthButton initialUser={null} layout="landing" />
         </div>
         
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl w-full px-4">
@@ -86,7 +86,7 @@ export default async function Home() {
             SmartBookmarks
           </h1>
         </div>
-        <AuthButton initialUser={user} />
+        <AuthButton initialUser={user} layout="dashboard" />
       </header>
 
       <div className="w-full max-w-5xl mx-auto flex-1">
