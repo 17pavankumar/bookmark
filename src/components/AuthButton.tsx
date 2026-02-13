@@ -14,6 +14,7 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [message, setMessage] = useState("")
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -23,21 +24,19 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
       setUser(newUser)
       
       // Case 1: Logged out (Server thought logged in -> Client says logged out)
+      // Only redirect on logout, not on login (callback handles login redirect)
       if (initialUser && !newUser) {
-        router.refresh()
-      }
-
-      // Case 2: Logged in (Server thought logged out -> Client says logged in)
-      // This fixes the issue where you see the Landing Page but with a "Sign Out" button
-      if (!initialUser && newUser) {
-        router.refresh()
+        setIsTransitioning(true)
+        // Use hard redirect to ensure clean state
+        window.location.href = '/'
+        return
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase, initialUser, router])
+  }, [supabase, initialUser])
 
   const getRedirectUrl = () => {
     let url = process.env.NEXT_PUBLIC_SITE_URL ?? location.origin
@@ -91,9 +90,23 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
   }
 
   const handleLogout = async () => {
+    setIsTransitioning(true)
     await supabase.auth.signOut()
     setUser(null)
-    router.refresh() // Explicitly refresh on logout action
+    // Use hard redirect to ensure clean state
+    window.location.href = '/'
+  }
+
+  // Show loading state during transitions
+  if (isTransitioning) {
+    return (
+      <div className="flex items-center gap-4">
+        <div className="animate-pulse flex items-center gap-2">
+          <div className="h-8 w-8 bg-white/10 rounded-full"></div>
+          <div className="h-4 w-24 bg-white/10 rounded hidden sm:block"></div>
+        </div>
+      </div>
+    )
   }
 
   if (user) {
@@ -118,7 +131,7 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
   // If we are on the dashboard (initialUser exists) but currently logged out, 
   // don't render the huge login form. Just render nothing or a loading state 
   // while the page refreshes.
-  if (initialUser && !user) {
+  if (initialUser && !user && !isTransitioning) {
     return null
   }
 
