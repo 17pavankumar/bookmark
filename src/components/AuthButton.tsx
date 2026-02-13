@@ -22,10 +22,14 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
       const newUser = session?.user ?? null
       setUser(newUser)
       
-      // If we were logged in (initialUser) and now we are not, refresh the page
-      // This forces the server component to re-evaluate and show the Landing Page
-      // instead of showing the Login Form inside the Dashboard header
+      // Case 1: Logged out (Server thought logged in -> Client says logged out)
       if (initialUser && !newUser) {
+        router.refresh()
+      }
+
+      // Case 2: Logged in (Server thought logged out -> Client says logged in)
+      // This fixes the issue where you see the Landing Page but with a "Sign Out" button
+      if (!initialUser && newUser) {
         router.refresh()
       }
     })
@@ -35,6 +39,13 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
     }
   }, [supabase, initialUser, router])
 
+  const getRedirectUrl = () => {
+    let url = process.env.NEXT_PUBLIC_SITE_URL ?? location.origin
+    // Ensure no trailing slash
+    url = url.replace(/\/$/, '')
+    return `${url}/auth/callback`
+  }
+
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
     setMessage("")
@@ -43,7 +54,7 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${location.origin}/auth/callback`,
+          redirectTo: getRedirectUrl(),
         },
       })
 
@@ -65,7 +76,7 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${location.origin}/auth/callback`,
+          emailRedirectTo: getRedirectUrl(),
         },
       })
 
