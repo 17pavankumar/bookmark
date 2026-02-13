@@ -84,7 +84,12 @@ export default function BookmarkList({ initialBookmarks, user }: { initialBookma
               {bookmark.title}
             </CardTitle>
             <CardDescription className="text-xs text-gray-500 mt-1">
-              added {new Date(bookmark.created_at).toLocaleDateString()}
+              added {new Date(bookmark.created_at).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                timeZone: 'UTC'
+              })}
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-2">

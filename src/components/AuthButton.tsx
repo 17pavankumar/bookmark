@@ -6,6 +6,7 @@ import { Button } from "./ui/button"
 import { LogOut, Mail } from "lucide-react"
 import { useEffect, useState } from "react"
 import { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
+import { useRouter } from "next/navigation"
 
 export default function AuthButton({ initialUser }: { initialUser: User | null }) {
   const [user, setUser] = useState<User | null>(initialUser)
@@ -14,16 +15,25 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
   const [googleLoading, setGoogleLoading] = useState(false)
   const [message, setMessage] = useState("")
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      setUser(session?.user ?? null)
+      const newUser = session?.user ?? null
+      setUser(newUser)
+      
+      // If we were logged in (initialUser) and now we are not, refresh the page
+      // This forces the server component to re-evaluate and show the Landing Page
+      // instead of showing the Login Form inside the Dashboard header
+      if (initialUser && !newUser) {
+        router.refresh()
+      }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [supabase, initialUser, router])
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
@@ -72,6 +82,7 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    router.refresh() // Explicitly refresh on logout action
   }
 
   if (user) {
@@ -91,6 +102,13 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
         </Button>
       </div>
     )
+  }
+
+  // If we are on the dashboard (initialUser exists) but currently logged out, 
+  // don't render the huge login form. Just render nothing or a loading state 
+  // while the page refreshes.
+  if (initialUser && !user) {
+    return null
   }
 
   return (
