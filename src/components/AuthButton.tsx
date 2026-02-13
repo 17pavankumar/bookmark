@@ -97,8 +97,12 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
     window.location.href = '/'
   }
 
-  // Show loading state during transitions
-  if (isTransitioning) {
+  // Detect state mismatch between Server (initialUser) and Client (user)
+  const isMismatch = (!!initialUser !== !!user)
+
+  // Show loading state during transitions or mismatches
+  // This prevents the "broken" UI where the wrong button/form shows up in the wrong layout
+  if (isTransitioning || isMismatch) {
     return (
       <div className="flex items-center gap-4">
         <div className="animate-pulse flex items-center gap-2">
@@ -126,13 +130,6 @@ export default function AuthButton({ initialUser }: { initialUser: User | null }
         </Button>
       </div>
     )
-  }
-
-  // If we are on the dashboard (initialUser exists) but currently logged out, 
-  // don't render the huge login form. Just render nothing or a loading state 
-  // while the page refreshes.
-  if (initialUser && !user && !isTransitioning) {
-    return null
   }
 
   return (

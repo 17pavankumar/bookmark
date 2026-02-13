@@ -6,6 +6,9 @@ import AuthButton from "@/components/AuthButton"
 import { Bookmark } from "@/types"
 import { Sparkles, Zap, Lock, LogIn } from "lucide-react"
 
+// Force dynamic rendering to prevent caching of authentication state
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
