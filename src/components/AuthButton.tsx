@@ -37,11 +37,22 @@ export default function AuthButton({
       if (user?.id !== newUser?.id) {
         setUser(newUser)
         if (newUser && !initialUser) {
-           // We just logged in, but server doesn't know. Refresh page.
-           setIsTransitioning(true)
-           router.refresh()
+           // We just logged in, but server doesn't know. 
+           // Check if we already tried to fix this to avoid infinite loop.
+           const hasTriedFix = sessionStorage.getItem('auth_fix_attempt')
+           
+           if (!hasTriedFix) {
+             sessionStorage.setItem('auth_fix_attempt', 'true')
+             setIsTransitioning(true)
+             window.location.reload() // Hard reload to force cookie sync
+           } else {
+             // We tried to fix it and it failed (server still says logged out).
+             // Stop the loop. Clear the flag for next time. 
+             // We will naturally fall through to showing the "Dashboard" button (or null) logic below.
+             sessionStorage.removeItem('auth_fix_attempt')
+             setIsTransitioning(false)
+           }
         } else if (!newUser && initialUser) {
-           // We just logged out, but server doesn't know. Refresh page.
            setIsTransitioning(true)
            router.refresh()
         }
@@ -231,8 +242,16 @@ export default function AuthButton({
     )
   }
 
-  // Fallback (e.g., logged in but on landing layout, or logged out but on dashboard layout) 
-  // We rely on the useEffect above to trigger a refresh/redirect.
-  // We return null to avoid flash of wrong content.
+  // Fallback: If layout is landing but has user (Client side auth is active)
+  if (user) {
+    return (
+      <Button 
+        onClick={() => window.location.href = '/'}
+        className="gap-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg rounded-full font-bold px-8 py-3 transition-all transform hover:scale-[1.02]"
+      >
+         Go to Dashboard
+      </Button>
+    )
+  }
   return null
 }
