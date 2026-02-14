@@ -1,7 +1,6 @@
 
 import { createClient } from "../lib/supabase/server"
-import AddBookmarkForm from "@/components/AddBookmarkForm"
-import BookmarkList from "@/components/BookmarkList"
+import Dashboard from "@/components/Dashboard"
 import AuthButton from "@/components/AuthButton"
 import { Bookmark } from "@/types"
 import { Sparkles, Zap, Lock, LogIn } from "lucide-react"
@@ -90,16 +89,7 @@ export default async function Home() {
       </header>
 
       <div className="w-full max-w-5xl mx-auto flex-1">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-3 tracking-tight">Your Collection</h2>
-          <p className="text-slate-400 font-light">Add, manage, and sync your favorite links.</p>
-        </div>
-
-        <AddBookmarkForm user={user} />
-
-        <div className="mt-12 pb-20">
-          <BookmarkList initialBookmarks={initialBookmarks} user={user} />
-        </div>
+        <Dashboard initialBookmarks={initialBookmarks} user={user} />
       </div>
     </main>
   )

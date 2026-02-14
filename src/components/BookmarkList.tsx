@@ -1,85 +1,12 @@
 
 "use client"
 
-import { useEffect, useState } from "react"
-import { createClient } from "../lib/supabase/client"
 import { Bookmark } from "@/types"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card" // Updated import path
-import { Trash2, ExternalLink, Loader2 } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Trash2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { toast } from "react-hot-toast"
-import { User, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
 
-export default function BookmarkList({ initialBookmarks, user }: { initialBookmarks: Bookmark[], user: User }) {
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks)
-  const supabase = createClient()
-
-  // Sync state with props (e.g. when router.refresh() is called)
-  useEffect(() => {
-    setBookmarks(initialBookmarks)
-  }, [initialBookmarks])
-
-  // Handle manual additions via event (optimistic-like update)
-  useEffect(() => {
-    const handleNewBookmark = (e: CustomEvent<Bookmark>) => {
-      const newBookmark = e.detail
-      setBookmarks((prev) => {
-        if (prev.some(b => b.id === newBookmark.id)) return prev
-        return [newBookmark, ...prev]
-      })
-    }
-
-    window.addEventListener('bookmark-added' as any, handleNewBookmark as any)
-    return () => window.removeEventListener('bookmark-added' as any, handleNewBookmark as any)
-  }, [])
-
-  useEffect(() => {
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('realtime-bookmarks')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bookmarks',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload: RealtimePostgresChangesPayload<Bookmark>) => {
-          if (payload.eventType === 'INSERT') {
-            const newBookmark = payload.new as Bookmark
-            setBookmarks((prev) => {
-               if (prev.some(b => b.id === newBookmark.id)) return prev
-               return [newBookmark, ...prev]
-            })
-            toast("New bookmark added!")
-          } else if (payload.eventType === 'DELETE') {
-            setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id))
-            toast("Bookmark deleted.")
-          } else if (payload.eventType === 'UPDATE') {
-            setBookmarks((prev) => prev.map((b) => (b.id === payload.new.id ? { ...b, ...payload.new } as Bookmark : b)))
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [supabase, user.id])
-
-  // Handle delete via RPC or just supabase delete
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('bookmarks')
-      .delete()
-      .eq('id', id)
-    
-    if (error) {
-      toast.error("Failed to delete bookmark")
-    }
-  }
-
+export default function BookmarkList({ bookmarks, onDelete }: { bookmarks: Bookmark[], onDelete: (id: string) => void }) {
   if (bookmarks.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
@@ -97,7 +24,7 @@ export default function BookmarkList({ initialBookmarks, user }: { initialBookma
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => handleDelete(bookmark.id)}
+                onClick={() => onDelete(bookmark.id)}
                 className="h-8 w-8 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-full"
               >
                 <Trash2 className="h-4 w-4" />

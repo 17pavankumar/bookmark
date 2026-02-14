@@ -9,14 +9,13 @@ import { Plus, Loader2 } from "lucide-react"
 import { User } from "@supabase/supabase-js"
 import { toast } from "react-hot-toast"
 
-import { useRouter } from "next/navigation"
+import { Bookmark } from "@/types"
 
-export default function AddBookmarkForm({ user }: { user: User }) {
+export default function AddBookmarkForm({ user, onAdd }: { user: User, onAdd: (bookmark: Bookmark) => void }) {
   const [title, setTitle] = useState("")
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,11 +39,9 @@ export default function AddBookmarkForm({ user }: { user: User }) {
       setUrl("")
       toast.success("Bookmark added!")
       
-      // 1. Immediate UI update via event
-      window.dispatchEvent(new CustomEvent('bookmark-added', { detail: data }))
+      // Notify parent component
+      onAdd(data as Bookmark)
       
-      // 2. Background server sync
-      router.refresh() 
     } catch (error: any) {
       toast.error(`Error adding bookmark: ${error.message}`)
     } finally {
