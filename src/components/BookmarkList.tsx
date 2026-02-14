@@ -19,6 +19,20 @@ export default function BookmarkList({ initialBookmarks, user }: { initialBookma
     setBookmarks(initialBookmarks)
   }, [initialBookmarks])
 
+  // Handle manual additions via event (optimistic-like update)
+  useEffect(() => {
+    const handleNewBookmark = (e: CustomEvent<Bookmark>) => {
+      const newBookmark = e.detail
+      setBookmarks((prev) => {
+        if (prev.some(b => b.id === newBookmark.id)) return prev
+        return [newBookmark, ...prev]
+      })
+    }
+
+    window.addEventListener('bookmark-added' as any, handleNewBookmark as any)
+    return () => window.removeEventListener('bookmark-added' as any, handleNewBookmark as any)
+  }, [])
+
   useEffect(() => {
     // Subscribe to realtime changes
     const channel = supabase
@@ -29,11 +43,15 @@ export default function BookmarkList({ initialBookmarks, user }: { initialBookma
           event: '*',
           schema: 'public',
           table: 'bookmarks',
-          filter: `user_id=eq.${user.id}`, // Filter by user ID for privacy/performance
+          filter: `user_id=eq.${user.id}`,
         },
         (payload: RealtimePostgresChangesPayload<Bookmark>) => {
           if (payload.eventType === 'INSERT') {
-            setBookmarks((prev) => [payload.new as Bookmark, ...prev])
+            const newBookmark = payload.new as Bookmark
+            setBookmarks((prev) => {
+               if (prev.some(b => b.id === newBookmark.id)) return prev
+               return [newBookmark, ...prev]
+            })
             toast("New bookmark added!")
           } else if (payload.eventType === 'DELETE') {
             setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id))

@@ -24,20 +24,27 @@ export default function AddBookmarkForm({ user }: { user: User }) {
 
     setLoading(true)
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("bookmarks")
         .insert({
           title,
           url,
           user_id: user.id
         })
+        .select()
+        .single()
 
       if (error) throw error
 
       setTitle("")
       setUrl("")
       toast.success("Bookmark added!")
-      router.refresh() // <--- Force server refresh
+      
+      // 1. Immediate UI update via event
+      window.dispatchEvent(new CustomEvent('bookmark-added', { detail: data }))
+      
+      // 2. Background server sync
+      router.refresh() 
     } catch (error: any) {
       toast.error(`Error adding bookmark: ${error.message}`)
     } finally {
