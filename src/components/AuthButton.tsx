@@ -39,11 +39,10 @@ export default function AuthButton({
       }
 
       // Case 2: Logged in (Server thought logged out -> Client says logged in)
-      // This fixes the issue where you see the Landing Page but with a "Sign Out" button
+      // We do NOT auto-redirect here anymore to prevent infinite loops.
+      // Instead, we let the UI show a "Go to Dashboard" button.
       if (!initialUser && newUser) {
-        setIsTransitioning(true)
-        // Use hard redirect to ensure clean state
-        window.location.href = '/'
+        setIsTransitioning(false) // Stop any loading state
         return
       }
     })
@@ -243,7 +242,17 @@ export default function AuthButton({
         </div>
       )
     }
-    // If layout is landing but has user (should rely on useEffect redirect), render nothing
+    // If layout is landing but has user (Client side auth is active)
+    if (user) {
+      return (
+        <Button 
+          onClick={() => window.location.href = '/'}
+          className="gap-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg rounded-full font-bold px-8 py-3 transition-all transform hover:scale-[1.02]"
+        >
+           Go to Dashboard
+        </Button>
+      )
+    }
     return null
   }
 
