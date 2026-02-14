@@ -20,7 +20,7 @@ export default function BookmarkList({ bookmarks, onDelete }: { bookmarks: Bookm
       {bookmarks.map((bookmark) => (
         <Card key={bookmark.id} className="group hover:-translate-y-1 transition-all duration-300 border-white/10 bg-white/5 backdrop-blur-md">
           <CardHeader className="relative pb-2">
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-4 right-4 z-20">
               <Button 
                 variant="ghost" 
                 size="icon" 

@@ -67,6 +67,7 @@ export default function Dashboard({ initialBookmarks, user }: { initialBookmarks
       .eq('id', id)
     
     if (error) {
+      console.error("Delete Error:", error)
       toast.error("Failed to delete bookmark")
       // Rollback
       setBookmarks(previousBookmarks)
