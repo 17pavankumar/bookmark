@@ -14,6 +14,11 @@ export default function BookmarkList({ initialBookmarks, user }: { initialBookma
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks)
   const supabase = createClient()
 
+  // Sync state with props (e.g. when router.refresh() is called)
+  useEffect(() => {
+    setBookmarks(initialBookmarks)
+  }, [initialBookmarks])
+
   useEffect(() => {
     // Subscribe to realtime changes
     const channel = supabase
