@@ -3,7 +3,7 @@
 
 import { createClient } from "../lib/supabase/client"
 import { Button } from "./ui/button"
-import { LogOut, Mail } from "lucide-react"
+import { LogOut, Mail, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
@@ -105,12 +105,39 @@ export default function AuthButton({
     window.location.href = '/'
   }
 
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Are you sure you want to delete your account? This cannot be undone and all your bookmarks will be lost.")) {
+      return
+    }
+
+    setIsTransitioning(true)
+    
+    try {
+      const { error } = await supabase.rpc('delete_user')
+      if (error) throw error
+      
+      await supabase.auth.signOut()
+      setUser(null)
+      window.location.href = '/'
+    } catch (error: any) {
+      console.error('Error deleting account:', error)
+      const errorMsg = error.message || JSON.stringify(error) || "Unknown error"
+      
+      if (errorMsg.includes('does not exist') || errorMsg.includes('delete_user')) {
+        setMessage("Error: The delete function is missing. Please run the FIX_DELETE_USER.sql script in Supabase.")
+        alert("Action Required: Please run the 'FIX_DELETE_USER.sql' script in your Supabase SQL Editor to enable account deletion.")
+      } else {
+        setMessage(`Error deleting account: ${errorMsg}`)
+      }
+      setIsTransitioning(false)
+    }
+  }
+
   // Detect state mismatch between Server (initialUser) and Client (user)
   const isMismatch = (!!initialUser !== !!user)
 
-  // Show loading state during transitions or mismatches
-  // This prevents the "broken" UI where the wrong button/form shows up in the wrong layout
-  if (isTransitioning || isMismatch) {
+  // Show loading state during transitions
+  if (isTransitioning) {
     return (
       <div className="flex items-center gap-4 min-h-[40px]">
         <div className="animate-pulse flex items-center gap-2">
@@ -132,10 +159,20 @@ export default function AuthButton({
             {user.email}
           </span>
           <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleDeleteAccount}
+            className="gap-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all font-medium rounded-full mr-2"
+            title="Delete Account"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Delete</span>
+          </Button>
+          <Button 
             variant="outline" 
             size="sm" 
             onClick={handleLogout}
-            className="gap-2 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all font-semibold rounded-full"
+            className="gap-2 border-slate-700 text-slate-300 hover:bg-slate-800 transition-all font-semibold rounded-full"
           >
             <LogOut className="h-4 w-4" />
             Sign Out
