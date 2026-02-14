@@ -39,10 +39,10 @@ export default function AuthButton({
       }
 
       // Case 2: Logged in (Server thought logged out -> Client says logged in)
-      // We do NOT auto-redirect here anymore to prevent infinite loops.
-      // Instead, we let the UI show a "Go to Dashboard" button.
+      // We will try to redirect ONCE.
       if (!initialUser && newUser) {
-        setIsTransitioning(false) // Stop any loading state
+        setIsTransitioning(true)
+        window.location.href = '/'
         return
       }
     })
@@ -243,17 +243,10 @@ export default function AuthButton({
       )
     }
     // If layout is landing but has user (Client side auth is active)
+    // We normally redirect, but if we are here, just return null to avoid flash
     if (user) {
-      return (
-        <Button 
-          onClick={() => window.location.href = '/'}
-          className="gap-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg rounded-full font-bold px-8 py-3 transition-all transform hover:scale-[1.02]"
-        >
-           Go to Dashboard
-        </Button>
-      )
+      return null
     }
-    return null
   }
 
   return null
