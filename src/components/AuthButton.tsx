@@ -247,7 +247,7 @@ export default function AuthButton({
     return (
       <Button 
         onClick={() => window.location.href = '/'}
-        className="gap-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg rounded-full font-bold px-8 py-3 transition-all transform hover:scale-[1.02]"
+        className="hidden gap-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg rounded-full font-bold px-8 py-3 transition-all transform hover:scale-[1.02]"
       >
          Go to Dashboard
       </Button>
