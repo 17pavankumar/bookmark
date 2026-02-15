@@ -36,23 +36,8 @@ export default function AuthButton({
       // If the user state changed drastically from what we know
       if (user?.id !== newUser?.id) {
         setUser(newUser)
-        if (newUser && !initialUser) {
-           // We just logged in, but server doesn't know. 
-           // Check if we already tried to fix this to avoid infinite loop.
-           const hasTriedFix = sessionStorage.getItem('auth_fix_attempt')
-           
-           if (!hasTriedFix) {
-             sessionStorage.setItem('auth_fix_attempt', 'true')
-             setIsTransitioning(true)
-             window.location.reload() // Hard reload to force cookie sync
-           } else {
-             // We tried to fix it and it failed (server still says logged out).
-             // Stop the loop. Clear the flag for next time. 
-             // We will naturally fall through to showing the "Dashboard" button (or null) logic below.
-             sessionStorage.removeItem('auth_fix_attempt')
-             setIsTransitioning(false)
-           }
-        } else if (!newUser && initialUser) {
+
+        if (!newUser && initialUser) {
            setIsTransitioning(true)
            router.refresh()
         }
@@ -159,9 +144,7 @@ export default function AuthButton({
   if (layout === 'dashboard' && user) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium hidden sm:inline-block text-slate-300">
-          {user.email}
-        </span>
+
         <Button 
           variant="ghost" 
           size="sm" 
@@ -186,7 +169,7 @@ export default function AuthButton({
   }
 
   // --- LANDING LAYOUT LOGIC ---
-  if (layout === 'landing' && !user) {
+  if (layout === 'landing') {
     return (
       <div className="flex flex-col gap-4 items-center">
         {/* Google Sign In Button */}
