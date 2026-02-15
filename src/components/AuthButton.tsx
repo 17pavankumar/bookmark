@@ -32,8 +32,9 @@ export default function AuthButton({
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // console.log("Auth Event:", event, session?.user?.email)
+      const newUser = session?.user ?? null
       
+      // Only handle explicit sign out
       if (event === 'SIGNED_OUT') {
          setUser(null)
          setIsTransitioning(true)
@@ -41,21 +42,17 @@ export default function AuthButton({
          return
       }
 
-      const newUser = session?.user ?? null
+      // Update local state to match session, but don't trigger refresh
+      // The server-side rendering already handles the correct initial state
       if (user?.id !== newUser?.id) {
         setUser(newUser)
-        // Only refresh on LOGIN to switch to dashboard
-        if (newUser && !initialUser) {
-           setIsTransitioning(true)
-           router.refresh()
-        }
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase, initialUser, user?.id, router])
+  }, [supabase, user?.id, router])
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
