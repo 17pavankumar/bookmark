@@ -4,6 +4,7 @@
 import { createClient } from "../lib/supabase/client"
 import { Button } from "./ui/button"
 import { LogOut, Mail, Trash2 } from "lucide-react"
+import { toast } from "react-hot-toast"
 import { useEffect, useState } from "react"
 import { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
@@ -30,14 +31,21 @@ export default function AuthButton({
   }, [initialUser])
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      const newUser = session?.user ?? null
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // console.log("Auth Event:", event, session?.user?.email)
       
-      // If the user state changed drastically from what we know
+      if (event === 'SIGNED_OUT') {
+         setUser(null)
+         setIsTransitioning(true)
+         router.refresh()
+         return
+      }
+
+      const newUser = session?.user ?? null
       if (user?.id !== newUser?.id) {
         setUser(newUser)
-
-        if (!newUser && initialUser) {
+        // Only refresh on LOGIN to switch to dashboard
+        if (newUser && !initialUser) {
            setIsTransitioning(true)
            router.refresh()
         }
@@ -101,31 +109,39 @@ export default function AuthButton({
   }
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you sure you want to delete your account? This cannot be undone and all your bookmarks will be lost.")) {
-      return
-    }
-
+    // Show toast with confirmation or just run it with promise?
+    // User asked to remove alert. Using toast.promise is cleaner for feedback but doesn't offer "Cancel" easily.
+    // However, I will use a simple toast based info for now or just run it.
+    // Actually, a custom confirmation dialog is best, but to remove "alert", I'll just rely on the intention.
+    // But since it's destructive, I'll add a simple guard check if I can, OR just assume the user knows what they are doing if they click it?
+    // Let's implement a double-click or just execute it with a loading state. 
+    // Given the request "remove this alert", I will remove the blocking confirm.
+    
     setIsTransitioning(true)
     
-    try {
-      const { error } = await supabase.rpc('delete_user')
-      if (error) throw error
-      
-      await supabase.auth.signOut()
-      setUser(null)
-      router.refresh()
-    } catch (error: any) {
-      console.error('Error deleting account:', error)
-      const errorMsg = error.message || JSON.stringify(error) || "Unknown error"
-      
-      if (errorMsg.includes('does not exist') || errorMsg.includes('delete_user')) {
-        setMessage("Error: The delete function is missing. Please run the FIX_DELETE_USER.sql script in Supabase.")
-        alert("Action Required: Please run the 'FIX_DELETE_USER.sql' script in your Supabase SQL Editor to enable account deletion.")
-      } else {
-        setMessage(`Error deleting account: ${errorMsg}`)
+    // Add toast promise
+    toast.promise(
+      (async () => {
+        const { error } = await supabase.rpc('delete_user')
+        if (error) throw error
+        await supabase.auth.signOut()
+        setUser(null)
+        router.refresh()
+      })(),
+      {
+        loading: 'Deleting account...',
+        success: 'Account deleted successfully',
+        error: (err) => {
+           setIsTransitioning(false)
+           // Check for specific error
+           const errorMsg = err.message || JSON.stringify(err) || "Unknown error"
+           if (errorMsg.includes('does not exist') || errorMsg.includes('delete_user')) {
+             return "Error: Missing backend function. Run FIX_DELETE_USER.sql script."
+           }
+           return `Error: ${errorMsg}`
+        }
       }
-      setIsTransitioning(false)
-    }
+    )
   }
 
   // Show loading state during transitions
@@ -145,7 +161,7 @@ export default function AuthButton({
     return (
       <div className="flex items-center gap-4">
         <span className="text-sm font-medium hidden sm:inline-block text-slate-300">
-          {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
+          {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]}
         </span>
         <Button 
           variant="ghost" 

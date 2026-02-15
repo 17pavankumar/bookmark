@@ -82,7 +82,7 @@ export default async function Home() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white hidden sm:block tracking-tight">
-            SmartBookmarks
+            Smart Bookmarks
           </h1>
         </div>
         <AuthButton initialUser={user} layout="dashboard" />
