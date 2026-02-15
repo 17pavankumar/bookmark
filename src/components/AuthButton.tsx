@@ -39,7 +39,6 @@ export default function AuthButton({
       // Only handle explicit sign out
       if (event === 'SIGNED_OUT') {
          setUser(null)
-         setIsTransitioning(true)
          router.refresh()
          hasRefreshedRef.current = false // Reset for next login
          return
@@ -52,7 +51,6 @@ export default function AuthButton({
         // If we detect a login (new user but server didn't know), refresh ONCE
         if (newUser && !initialUser && !hasRefreshedRef.current) {
            hasRefreshedRef.current = true
-           setIsTransitioning(true)
            router.refresh()
         }
       }
@@ -150,17 +148,17 @@ export default function AuthButton({
     )
   }
 
-  // Show loading state during transitions
-  if (isTransitioning) {
-    return (
-      <div className="flex items-center gap-4 min-h-[40px]">
-        <div className="animate-pulse flex items-center gap-2">
-          <div className="h-8 w-8 bg-white/10 rounded-full"></div>
-          <div className="h-4 w-24 bg-white/10 rounded hidden sm:block"></div>
-        </div>
-      </div>
-    )
-  }
+  // Show loading state during transitions - DISABLED for faster perceived load
+  // if (isTransitioning) {
+  //   return (
+  //     <div className="flex items-center gap-4 min-h-[40px]">
+  //       <div className="animate-pulse flex items-center gap-2">
+  //         <div className="h-8 w-8 bg-white/10 rounded-full"></div>
+  //         <div className="h-4 w-24 bg-white/10 rounded hidden sm:block"></div>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   // --- DASHBOARD LAYOUT LOGIC ---
   if (layout === 'dashboard' && user) {
