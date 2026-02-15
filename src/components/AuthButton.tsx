@@ -5,7 +5,7 @@ import { createClient } from "../lib/supabase/client"
 import { Button } from "./ui/button"
 import { LogOut, Mail, Trash2 } from "lucide-react"
 import { toast } from "react-hot-toast"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 
@@ -30,6 +30,8 @@ export default function AuthButton({
     setUser(initialUser)
   }, [initialUser])
 
+  const hasRefreshedRef = useRef(false)
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const newUser = session?.user ?? null
@@ -39,20 +41,27 @@ export default function AuthButton({
          setUser(null)
          setIsTransitioning(true)
          router.refresh()
+         hasRefreshedRef.current = false // Reset for next login
          return
       }
 
-      // Update local state to match session, but don't trigger refresh
-      // The server-side rendering already handles the correct initial state
+      // Update local state to match session
       if (user?.id !== newUser?.id) {
         setUser(newUser)
+        
+        // If we detect a login (new user but server didn't know), refresh ONCE
+        if (newUser && !initialUser && !hasRefreshedRef.current) {
+           hasRefreshedRef.current = true
+           setIsTransitioning(true)
+           router.refresh()
+        }
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase, user?.id, router])
+  }, [supabase, initialUser, user?.id, router])
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
