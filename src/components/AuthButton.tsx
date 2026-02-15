@@ -144,7 +144,9 @@ export default function AuthButton({
   if (layout === 'dashboard' && user) {
     return (
       <div className="flex items-center gap-4">
-
+        <span className="text-sm font-medium hidden sm:inline-block text-slate-300">
+          {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
+        </span>
         <Button 
           variant="ghost" 
           size="sm" 
